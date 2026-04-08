@@ -1,0 +1,8 @@
+FROM golang:1.22-bookworm
+WORKDIR /app
+
+RUN go install github.com/air-verse/air@v1.52.3
+
+ENV GONOSUMDB=* GOFLAGS=-mod=mod
+
+CMD ["air", "-c", ".air.toml"]

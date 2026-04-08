@@ -1,0 +1,6 @@
+go/.env
+TASK.md
+CLAUDE.md
+go/data/
+go/bin/foodscaner
+go/tmp/

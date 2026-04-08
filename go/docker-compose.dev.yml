@@ -1,0 +1,16 @@
+services:
+  foodscaner:
+    build:
+      context: ..
+      dockerfile: go/Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../go:/app
+      - ./data:/data
+      - go-mod-cache:/go/pkg/mod
+    env_file:
+      - .env
+
+volumes:
+  go-mod-cache:
