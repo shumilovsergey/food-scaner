@@ -3,18 +3,22 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 )
 
+var errNoCredits = errors.New("no credits")
+
 const claudeAPI = "https://api.anthropic.com/v1/messages"
 const model = "claude-opus-4-6"
 const systemPrompt = `You are a nutrition expert. Analyze the food in this image and estimate the nutritional content for the visible portion.
 Respond with ONLY a valid JSON object in this exact format, no other text:
-{"name": "food name", "grams": estimated_grams, "calories": estimated_calories}`
+{"name": "food name in Russian", "grams": estimated_grams, "calories": estimated_calories, "proteins": estimated_proteins_g, "fats": estimated_fats_g, "carbs": estimated_carbs_g}`
 
 type ScanRequest struct {
 	Image     string `json:"image"`
@@ -25,12 +29,21 @@ type ScanResult struct {
 	Name     string  `json:"name"`
 	Grams    float64 `json:"grams"`
 	Calories float64 `json:"calories"`
+	Proteins float64 `json:"proteins"`
+	Fats     float64 `json:"fats"`
+	Carbs    float64 `json:"carbs"`
+}
+
+// httpErr logs and responds with an HTTP error.
+func httpErr(w http.ResponseWriter, r *http.Request, msg string, code int) {
+	log.Printf("HTTP %d %s %s — %s", code, r.Method, r.URL.Path, msg)
+	http.Error(w, msg, code)
 }
 
 func handleScan(w http.ResponseWriter, r *http.Request) {
 	var req ScanRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Image == "" {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		httpErr(w, r, "bad request", http.StatusBadRequest)
 		return
 	}
 	if req.MediaType == "" {
@@ -39,7 +52,11 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 
 	result, err := scanWithClaude(req.Image, req.MediaType)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("scan failed: %v", err), http.StatusInternalServerError)
+		if errors.Is(err, errNoCredits) {
+			httpErr(w, r, "no credits", http.StatusPaymentRequired)
+			return
+		}
+		httpErr(w, r, fmt.Sprintf("scan failed: %v", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -95,6 +112,18 @@ func scanWithClaude(imageBase64, mediaType string) (*ScanResult, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
+		log.Printf("anthropic error status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(b)))
+		if resp.StatusCode == http.StatusPaymentRequired {
+			return nil, errNoCredits
+		}
+		var apiErr struct {
+			Error struct {
+				Type string `json:"type"`
+			} `json:"error"`
+		}
+		if json.Unmarshal(b, &apiErr) == nil && apiErr.Error.Type == "billing_error" {
+			return nil, errNoCredits
+		}
 		return nil, fmt.Errorf("claude api error %d: %s", resp.StatusCode, string(b))
 	}
 

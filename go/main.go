@@ -29,6 +29,7 @@ func main() {
 	}
 
 	// ── Server ────────────────────────────────────────────────────────────
+	log.SetFlags(log.Ldate | log.Ltime | log.LUTC)
 	initDB()
 
 	mux := http.NewServeMux()

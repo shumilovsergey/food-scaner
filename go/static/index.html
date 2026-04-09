@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Food Scanner</title>
+  <title>Сканер еды</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,63 +11,91 @@
   <!-- Login screen -->
   <div id="login-screen" class="screen hidden">
     <div class="center-card">
-      <h1>Food Scanner</h1>
-      <p>Sign in to continue</p>
-      <a href="/login" class="btn-primary">Sign in</a>
+      <div class="app-logo">🥗</div>
+      <h1>Сканер еды</h1>
+      <p>Войдите, чтобы продолжить</p>
+      <a href="/login" class="btn-primary">Войти</a>
     </div>
   </div>
 
-  <!-- Pending approval screen -->
+  <!-- Pending screen -->
   <div id="pending-screen" class="screen hidden">
     <div class="center-card">
-      <div class="pending-icon">&#9203;</div>
-      <h1>Waiting for approval</h1>
-      <p>Your account is pending review. You'll be able to use the app once approved.</p>
-      <p class="user-id-line">Your ID: <span id="pending-auth-id" class="user-id"></span></p>
-      <button id="logout-btn-pending" class="btn-secondary">Sign out</button>
+      <div class="pending-icon">⏳</div>
+      <h1>Ожидание доступа</h1>
+      <p>Ваш аккаунт на проверке. Как только вас одобрят — можно будет пользоваться приложением.</p>
+      <div class="id-block">
+        <span class="id-label">Ваш ID</span>
+        <span id="pending-auth-id" class="id-value"></span>
+      </div>
+      <button id="logout-btn-pending" class="btn-secondary">Выйти</button>
     </div>
   </div>
 
   <!-- Main screen -->
   <div id="main-screen" class="screen hidden">
-    <div class="header">
-      <span class="app-title">Food Scanner</span>
-      <div class="header-right">
-        <span id="scan-counter" class="scan-counter"></span>
-        <button id="logout-btn" class="icon-btn" title="Sign out">&#10551;</button>
-      </div>
-    </div>
 
     <div class="camera-wrapper">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="canvas" class="hidden"></canvas>
-      <div id="loading-overlay" class="overlay hidden">
+
+      <!-- Loading overlay -->
+      <div id="loading-overlay" class="loading-overlay hidden">
         <div class="spinner"></div>
-        <p>Analyzing food...</p>
+        <p>Анализирую...</p>
       </div>
     </div>
 
-    <div id="result-card" class="result-card hidden">
-      <button id="close-result-btn" class="close-btn">&#10005;</button>
-      <div class="result-name" id="result-name"></div>
-      <div class="result-stats">
-        <div class="stat">
-          <span class="stat-value" id="result-grams"></span>
-          <span class="stat-label">grams</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-value" id="result-calories"></span>
-          <span class="stat-label">kcal</span>
-        </div>
-      </div>
+    <!-- Bottom bar -->
+    <div class="bottom-bar">
+      <button id="scan-btn" class="scan-btn">Сканировать</button>
     </div>
 
-    <div class="controls">
-      <button id="scan-btn" class="scan-btn">
-        <span class="scan-icon">&#9711;</span>
-      </button>
+    <!-- Result sheet -->
+    <div id="result-sheet" class="result-sheet hidden">
+      <div class="sheet-handle"></div>
+
+      <div class="food-name" id="result-name"></div>
+
+      <div class="macros-grid">
+        <div class="macro-card macro-cal">
+          <span class="macro-value" id="result-calories"></span>
+          <span class="macro-label">ккал</span>
+        </div>
+        <div class="macro-card">
+          <span class="macro-value" id="result-grams"></span>
+          <span class="macro-label">граммы</span>
+        </div>
+        <div class="macro-card">
+          <span class="macro-value" id="result-proteins"></span>
+          <span class="macro-label">белки, г</span>
+        </div>
+        <div class="macro-card">
+          <span class="macro-value" id="result-fats"></span>
+          <span class="macro-label">жиры, г</span>
+        </div>
+        <div class="macro-card">
+          <span class="macro-value" id="result-carbs"></span>
+          <span class="macro-label">углеводы, г</span>
+        </div>
+      </div>
+
+      <div class="sheet-divider"></div>
+
+      <div class="user-info">
+        <div class="user-info-row">
+          <span class="user-info-label">Ваш ID</span>
+          <span id="result-auth-id" class="user-info-value mono"></span>
+        </div>
+        <div class="user-info-row">
+          <span class="user-info-label">Осталось сканов сегодня</span>
+          <span id="result-scans-left" class="user-info-value"></span>
+        </div>
+      </div>
+
+      <button id="close-result-btn" class="btn-primary">Закрыть</button>
     </div>
+
   </div>
 
   <script src="script.js"></script>

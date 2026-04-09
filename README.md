@@ -33,6 +33,21 @@ You can run these commands **while the server is running** — no restart needed
 
 On the server the binary is at `/opt/foodscaner/foodscaner`.
 
+## Backup
+
+**Required on server:**
+```bash
+apt install sqlite3
+mkdir -p /backups/foodscaner
+```
+
+**Cron — daily backup, keep 7 days** (`crontab -e`):
+```
+0 3 * * * sqlite3 /data/foodscaner.db ".backup /backups/foodscaner/foodscaner-$(date +\%F).db" && find /backups/foodscaner -name "*.db" -mtime +7 -delete
+```
+
+Runs at 3am every night. No downtime — SQLite's `.backup` command is safe while the service is running.
+
 ## Prod deploy
 
 ```bash
