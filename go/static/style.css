@@ -198,10 +198,10 @@ html, body {
   background: var(--platinum);
   padding: 1.25rem 2.5rem calc(1.5rem + env(safe-area-inset-bottom));
   flex-shrink: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 2.5rem;
+  justify-items: center;
 }
 
 .side-btn {
