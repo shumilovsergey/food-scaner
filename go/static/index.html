@@ -48,7 +48,55 @@
 
     <!-- Bottom bar -->
     <div class="bottom-bar">
-      <button id="scan-btn" class="scan-btn">Сканировать</button>
+      <!-- Gallery picker -->
+      <input type="file" id="gallery-input" accept="image/*" class="hidden" />
+      <button id="gallery-btn" class="side-btn" title="Выбрать из галереи">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2.5"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <path d="M21 15l-5-5L5 21"/>
+        </svg>
+      </button>
+
+      <button id="scan-btn" class="scan-btn"></button>
+
+      <!-- User info -->
+      <button id="user-btn" class="side-btn" title="Мой профиль">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- User info sheet -->
+    <div id="user-sheet" class="result-sheet hidden">
+      <div class="sheet-handle"></div>
+      <div class="food-name">Мой профиль</div>
+      <div class="user-info">
+        <div class="user-info-row">
+          <span class="user-info-label">Имя</span>
+          <span id="user-sheet-name" class="user-info-value"></span>
+        </div>
+        <div class="user-info-row">
+          <span class="user-info-label">Ваш ID</span>
+          <span id="user-sheet-id" class="user-info-value mono"></span>
+        </div>
+        <div class="user-info-row">
+          <span class="user-info-label">Сканов сегодня</span>
+          <span id="user-sheet-used" class="user-info-value"></span>
+        </div>
+        <div class="user-info-row">
+          <span class="user-info-label">Осталось сегодня</span>
+          <span id="user-sheet-left" class="user-info-value"></span>
+        </div>
+        <div class="user-info-row">
+          <span class="user-info-label">Дневной лимит</span>
+          <span id="user-sheet-limit" class="user-info-value"></span>
+        </div>
+      </div>
+      <button id="close-user-btn" class="btn-secondary">Закрыть</button>
+      <button id="logout-btn" class="btn-secondary" style="color: var(--firebrick); border-color: var(--firebrick)">Выйти</button>
     </div>
 
     <!-- Result sheet -->

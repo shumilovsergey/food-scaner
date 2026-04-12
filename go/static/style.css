@@ -5,7 +5,7 @@
 }
 
 :root {
-  --platinum: #EBE6E2;
+  --platinum: #E8E3DE;
   --white:    #FFFFFF;
   --firebrick: #B43F2C;
   --firebrick-light: #C94F3A;
@@ -148,7 +148,7 @@ html, body {
 /* ── Main screen ── */
 
 #main-screen {
-  background: #000;
+  background: var(--platinum);
 }
 
 /* Camera */
@@ -156,6 +156,9 @@ html, body {
   flex: 1;
   position: relative;
   overflow: hidden;
+  margin: 1rem 1rem 0.75rem;
+  border-radius: 1.5rem;
+  background: #000;
 }
 
 #video {
@@ -193,32 +196,55 @@ html, body {
 /* Bottom bar */
 .bottom-bar {
   background: var(--platinum);
-  padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom));
+  padding: 1.25rem 2.5rem calc(1.5rem + env(safe-area-inset-bottom));
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+}
+
+.side-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.side-btn:active {
+  opacity: 1;
+  transform: scale(0.9);
 }
 
 .scan-btn {
-  width: 100%;
-  padding: 1rem;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
   background: var(--firebrick);
-  color: var(--white);
+  /* outer ring: platinum gap + dark border */
+  box-shadow: 0 0 0 4px var(--platinum), 0 0 0 6px var(--black);
   border: none;
-  border-radius: 1.25rem;
-  font-size: 1.05rem;
-  font-weight: 600;
   cursor: pointer;
-  letter-spacing: 0.01em;
-  transition: background 0.15s, transform 0.1s;
+  transition: transform 0.12s, background 0.12s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .scan-btn:active {
   background: var(--firebrick-light);
-  transform: scale(0.98);
+  transform: scale(0.92);
 }
 
 .scan-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: default;
   transform: none;
 }

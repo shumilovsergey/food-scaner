@@ -18,6 +18,17 @@ const resultCarbs     = document.getElementById('result-carbs');
 const resultAuthId    = document.getElementById('result-auth-id');
 const resultScansLeft = document.getElementById('result-scans-left');
 const logoutBtnPending = document.getElementById('logout-btn-pending');
+const galleryBtn       = document.getElementById('gallery-btn');
+const galleryInput     = document.getElementById('gallery-input');
+const userBtn          = document.getElementById('user-btn');
+const userSheet        = document.getElementById('user-sheet');
+const closeUserBtn     = document.getElementById('close-user-btn');
+const logoutBtn        = document.getElementById('logout-btn');
+const userSheetName    = document.getElementById('user-sheet-name');
+const userSheetId      = document.getElementById('user-sheet-id');
+const userSheetUsed    = document.getElementById('user-sheet-used');
+const userSheetLeft    = document.getElementById('user-sheet-left');
+const userSheetLimit   = document.getElementById('user-sheet-limit');
 
 let currentUser = null;
 
@@ -57,21 +68,24 @@ async function startCamera() {
 
 scanBtn.addEventListener('click', async () => {
   if (scanBtn.disabled) return;
-
   canvas.width  = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
   const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+  await doScan(base64, 'image/jpeg');
+});
 
+async function doScan(base64, mediaType) {
   scanBtn.disabled = true;
   resultSheet.classList.add('hidden');
+  userSheet.classList.add('hidden');
   loadingOverlay.classList.remove('hidden');
 
   try {
     const res = await fetch('/api/scan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: base64, media_type: 'image/jpeg' }),
+      body: JSON.stringify({ image: base64, media_type: mediaType }),
     });
 
     if (res.status === 401) { location.href = '/login'; return; }
@@ -81,7 +95,6 @@ scanBtn.addEventListener('click', async () => {
     if (!res.ok) throw new Error(await res.text() || res.statusText);
 
     const data = await res.json();
-
     resultName.textContent     = data.name;
     resultCalories.textContent = Math.round(data.calories);
     resultGrams.textContent    = Math.round(data.grams);
@@ -89,7 +102,6 @@ scanBtn.addEventListener('click', async () => {
     resultFats.textContent     = Math.round(data.fats);
     resultCarbs.textContent    = Math.round(data.carbs);
 
-    // refresh user info
     const me = await fetch('/api/me').then(r => r.json()).catch(() => currentUser);
     currentUser = me;
     const left = Math.max(0, me.daily_limit - me.today_scans);
@@ -103,9 +115,41 @@ scanBtn.addEventListener('click', async () => {
     loadingOverlay.classList.add('hidden');
     scanBtn.disabled = false;
   }
-});
+}
 
 closeResultBtn.addEventListener('click', () => resultSheet.classList.add('hidden'));
 logoutBtnPending.addEventListener('click', () => { location.href = '/logout'; });
+
+// ── Gallery ──
+galleryBtn.addEventListener('click', () => galleryInput.click());
+galleryInput.addEventListener('change', async () => {
+  const file = galleryInput.files[0];
+  if (!file) return;
+  galleryInput.value = '';
+
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  await doScan(base64, file.type || 'image/jpeg');
+});
+
+// ── User info sheet ──
+userBtn.addEventListener('click', () => {
+  if (!currentUser) return;
+  const left = Math.max(0, currentUser.daily_limit - currentUser.today_scans);
+  userSheetName.textContent  = currentUser.username || '—';
+  userSheetId.textContent    = currentUser.auth_id;
+  userSheetUsed.textContent  = currentUser.today_scans;
+  userSheetLeft.textContent  = left;
+  userSheetLimit.textContent = currentUser.daily_limit;
+  userSheet.classList.remove('hidden');
+});
+
+closeUserBtn.addEventListener('click', () => userSheet.classList.add('hidden'));
+logoutBtn.addEventListener('click', () => { location.href = '/logout'; });
 
 init();
