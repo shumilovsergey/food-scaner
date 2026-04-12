@@ -5,3 +5,5 @@ go/data/
 go/bin/foodscaner
 go/tmp/
 .DS_Store
+.claude/ 
+
