@@ -1,10 +1,16 @@
 # food-scaner
 
-## Dev
+## Build
 
+**Dev** — hot reload via Air, runs on `http://localhost:8080`:
 ```bash
 cd go
 docker compose -f docker-compose.dev.yml up
+```
+
+**Prod** — builds a static linux/amd64 binary into `go/bin/`:
+```bash
+docker build --target binary --output go/bin/ -f go/Dockerfile .
 ```
 
 ## Managing users
@@ -48,13 +54,10 @@ mkdir -p /backups/foodscaner
 
 Runs at 3am every night. No downtime — SQLite's `.backup` command is safe while the service is running.
 
-## Prod deploy
+## Deploy
 
 ```bash
-# Build linux binary
-docker build --target binary --output go/bin/ -f go/Dockerfile .
-
-# Copy to server
+# Copy binary to server
 scp go/bin/foodscaner root@your-server:/opt/foodscaner/
 
 # First time only — set up systemd service
