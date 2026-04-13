@@ -50,6 +50,27 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		req.MediaType = "image/jpeg"
 	}
 
+	userID := userIDFromCtx(r)
+	u, err := getUserByID(userID)
+	if err != nil {
+		httpErr(w, r, "user not found", http.StatusUnauthorized)
+		return
+	}
+
+	access, err := canScan(u)
+	if err != nil {
+		httpErr(w, r, "db error", http.StatusInternalServerError)
+		return
+	}
+	if !access.Allowed {
+		if access.Reason == "daily_limit" {
+			httpErr(w, r, fmt.Sprintf("Дневной лимит в %d сканов достигнут", u.DailyLimit), http.StatusTooManyRequests)
+		} else {
+			httpErr(w, r, "no scans left", http.StatusForbidden)
+		}
+		return
+	}
+
 	result, err := scanWithClaude(req.Image, req.MediaType)
 	if err != nil {
 		if errors.Is(err, errNoCredits) {
@@ -60,8 +81,7 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := userIDFromCtx(r)
-	insertScan(userID)
+	consumeScan(userID, access.Reason)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)

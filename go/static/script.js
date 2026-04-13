@@ -26,9 +26,18 @@ const closeUserBtn     = document.getElementById('close-user-btn');
 const logoutBtn        = document.getElementById('logout-btn');
 const userSheetName    = document.getElementById('user-sheet-name');
 const userSheetId      = document.getElementById('user-sheet-id');
+const userSheetStatus  = document.getElementById('user-sheet-status');
 const userSheetUsed    = document.getElementById('user-sheet-used');
-const userSheetLeft    = document.getElementById('user-sheet-left');
-const userSheetLimit   = document.getElementById('user-sheet-limit');
+const userSheetBuy     = document.getElementById('user-sheet-buy');
+const userBuyScansBtn  = document.getElementById('user-buy-scans-btn');
+const userBuyProBtn    = document.getElementById('user-buy-pro-btn');
+
+const welcomeSheet     = document.getElementById('welcome-sheet');
+const closeWelcomeBtn  = document.getElementById('close-welcome-btn');
+const noScansSheet     = document.getElementById('no-scans-sheet');
+const closeNoScansBtn  = document.getElementById('close-no-scans-btn');
+const buyScansBtn      = document.getElementById('buy-scans-btn');
+const buyProBtn        = document.getElementById('buy-pro-btn');
 
 let currentUser = null;
 
@@ -37,18 +46,52 @@ function showScreen(screen) {
   screen.classList.remove('hidden');
 }
 
+function canScanClient() {
+  if (!currentUser) return false;
+  const r = currentUser.role;
+  if (r === 'pro') return true;
+  if (r === 'tester') return true;
+  if (currentUser.owned_scans > 0) return true;
+  if (currentUser.free_scans_left > 0) return true;
+  return false;
+}
+
+function scansLeftText(me) {
+  if (me.role === 'pro') return 'PRO — безлимит';
+  if (me.role === 'tester') {
+    const left = Math.max(0, me.daily_limit - me.today_scans);
+    return `${left} из ${me.daily_limit} сегодня`;
+  }
+  const total = (me.free_scans_left || 0) + (me.owned_scans || 0);
+  return `${total} осталось`;
+}
+
+function statusText(me) {
+  if (me.role === 'pro') return `PRO до ${me.pro_until}`;
+  if (me.role === 'tester') return `Тестер · ${me.daily_limit}/день`;
+  const free = me.free_scans_left || 0;
+  const owned = me.owned_scans || 0;
+  if (free === 0 && owned === 0) return 'Сканы закончились';
+  const parts = [];
+  if (free > 0) parts.push(`${free} бесплатных`);
+  if (owned > 0) parts.push(`${owned} купленных`);
+  return parts.join(' · ');
+}
+
 async function init() {
   try {
     const res = await fetch('/api/me');
     if (res.status === 401) { showScreen(loginScreen); return; }
     currentUser = await res.json();
-    if (!currentUser.approved) {
-      pendingAuthId.textContent = currentUser.auth_id;
-      showScreen(pendingScreen);
-      return;
-    }
     showScreen(mainScreen);
     startCamera();
+
+    // Show welcome sheet once for new free users
+    if (currentUser.role === 'free' &&
+        currentUser.total_scans === 0 &&
+        !localStorage.getItem('welcomed')) {
+      welcomeSheet.classList.remove('hidden');
+    }
   } catch {
     showScreen(loginScreen);
   }
@@ -68,6 +111,10 @@ async function startCamera() {
 
 scanBtn.addEventListener('click', async () => {
   if (scanBtn.disabled) return;
+  if (!canScanClient()) {
+    noScansSheet.classList.remove('hidden');
+    return;
+  }
   canvas.width  = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
@@ -79,6 +126,8 @@ async function doScan(base64, mediaType) {
   scanBtn.disabled = true;
   resultSheet.classList.add('hidden');
   userSheet.classList.add('hidden');
+  welcomeSheet.classList.add('hidden');
+  noScansSheet.classList.add('hidden');
   loadingOverlay.classList.remove('hidden');
 
   try {
@@ -89,9 +138,16 @@ async function doScan(base64, mediaType) {
     });
 
     if (res.status === 401) { location.href = '/login'; return; }
-    if (res.status === 403) { showScreen(pendingScreen); return; }
+    if (res.status === 403) { noScansSheet.classList.remove('hidden'); return; }
     if (res.status === 429) { alert((await res.text()).trim()); return; }
-    if (res.status === 402) { alert('Средства на счёте закончились. Свяжитесь с Сергеем Шумиловым.'); return; }
+    if (res.status === 402) {
+      if (currentUser && (currentUser.role === 'tester' || currentUser.role === 'pro')) {
+        alert('Средства на счёте закончились. Свяжитесь с Сергеем Шумиловым.');
+      } else {
+        alert('Сервис временно недоступен. Попробуйте позже.');
+      }
+      return;
+    }
     if (!res.ok) throw new Error(await res.text() || res.statusText);
 
     const data = await res.json();
@@ -104,9 +160,8 @@ async function doScan(base64, mediaType) {
 
     const me = await fetch('/api/me').then(r => r.json()).catch(() => currentUser);
     currentUser = me;
-    const left = Math.max(0, me.daily_limit - me.today_scans);
     resultAuthId.textContent    = me.auth_id;
-    resultScansLeft.textContent = `${left} из ${me.daily_limit}`;
+    resultScansLeft.textContent = scansLeftText(me);
 
     resultSheet.classList.remove('hidden');
   } catch (err) {
@@ -140,16 +195,30 @@ galleryInput.addEventListener('change', async () => {
 // ── User info sheet ──
 userBtn.addEventListener('click', () => {
   if (!currentUser) return;
-  const left = Math.max(0, currentUser.daily_limit - currentUser.today_scans);
-  userSheetName.textContent  = currentUser.username || '—';
-  userSheetId.textContent    = currentUser.auth_id;
-  userSheetUsed.textContent  = currentUser.today_scans;
-  userSheetLeft.textContent  = left;
-  userSheetLimit.textContent = currentUser.daily_limit;
+  userSheetName.textContent   = currentUser.username || '—';
+  userSheetId.textContent     = currentUser.auth_id;
+  userSheetStatus.textContent = statusText(currentUser);
+  userSheetUsed.textContent   = currentUser.today_scans;
+  userSheetBuy.classList.toggle('hidden', currentUser.role === 'pro');
   userSheet.classList.remove('hidden');
 });
 
 closeUserBtn.addEventListener('click', () => userSheet.classList.add('hidden'));
 logoutBtn.addEventListener('click', () => { location.href = '/logout'; });
+
+// ── Welcome sheet ──
+closeWelcomeBtn.addEventListener('click', () => {
+  localStorage.setItem('welcomed', '1');
+  welcomeSheet.classList.add('hidden');
+});
+
+// ── No-scans sheet ──
+closeNoScansBtn.addEventListener('click', () => noScansSheet.classList.add('hidden'));
+
+const shopMsg = 'Магазин еще не открылся';
+buyScansBtn.addEventListener('click', () => alert(shopMsg));
+buyProBtn.addEventListener('click', () => alert(shopMsg));
+userBuyScansBtn.addEventListener('click', () => alert(shopMsg));
+userBuyProBtn.addEventListener('click', () => alert(shopMsg));
 
 init();

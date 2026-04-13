@@ -91,41 +91,6 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func requireApproved(next http.HandlerFunc) http.HandlerFunc {
-	return requireAuth(func(w http.ResponseWriter, r *http.Request) {
-		u, err := getUserByID(userIDFromCtx(r))
-		if err != nil {
-			http.Error(w, "user not found", http.StatusUnauthorized)
-			return
-		}
-		if !u.Approved {
-			http.Error(w, "pending approval", http.StatusForbidden)
-			return
-		}
-		next(w, r)
-	})
-}
-
-func withDailyLimit(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID := userIDFromCtx(r)
-		u, err := getUserByID(userID)
-		if err != nil {
-			http.Error(w, "user not found", http.StatusUnauthorized)
-			return
-		}
-		count, err := countTodayScans(userID)
-		if err != nil {
-			http.Error(w, "db error", http.StatusInternalServerError)
-			return
-		}
-		if count >= u.DailyLimit {
-			http.Error(w, fmt.Sprintf("daily limit of %d scans reached", u.DailyLimit), http.StatusTooManyRequests)
-			return
-		}
-		next(w, r)
-	}
-}
 
 // ── Auth handlers ─────────────────────────────────────────────────────────
 
@@ -218,15 +183,20 @@ func handleMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todayScans, _ := countTodayScans(u.ID)
+	totalScans, _ := countTotalScans(u.ID)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"id":          u.ID,
-		"auth_id":     u.AuthID,
-		"username":    u.Username,
-		"approved":    u.Approved,
-		"daily_limit": u.DailyLimit,
-		"today_scans": todayScans,
+		"id":              u.ID,
+		"auth_id":         u.AuthID,
+		"username":        u.Username,
+		"role":            u.Role,
+		"daily_limit":     u.DailyLimit,
+		"free_scans_left": u.FreeScansLeft,
+		"owned_scans":     u.OwnedScans,
+		"pro_until":       proUntilStr(u),
+		"today_scans":     todayScans,
+		"total_scans":     totalScans,
 	})
 }
 

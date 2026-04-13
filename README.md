@@ -17,27 +17,32 @@ docker build --target binary --output go/bin/ -f go/Dockerfile .
 
 You can run these commands **while the server is running** — no restart needed. SQLite handles concurrent access fine for quick one-shot writes.
 
+On the server the binary is at `/opt/foodscaner/foodscaner`.
+
 **List all users:**
 ```bash
 ./foodscaner --list-users
 ```
 
-**Approve a user** (by their auth_id shown on the pending screen):
+**Set role** (free | tester | pro):
 ```bash
-./foodscaner --approve 123456789
+./foodscaner --set-role 123456789 tester
 ```
 
-**Revoke access:**
+**Set PRO subscription until date:**
 ```bash
-./foodscaner --revoke 123456789
+./foodscaner --set-pro 123456789 2026-12-31
 ```
 
-**Change daily scan limit:**
+**Add purchased scan pack:**
+```bash
+./foodscaner --add-scans 123456789 10
+```
+
+**Change daily scan limit** (for testers):
 ```bash
 ./foodscaner --set-limit 123456789 20
 ```
-
-On the server the binary is at `/opt/foodscaner/foodscaner`.
 
 ## Backup
 

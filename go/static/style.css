@@ -270,6 +270,34 @@ html, body {
   to   { transform: translateY(0); }
 }
 
+.sheet-footer {
+  margin-top: auto;
+  padding-top: 1.5rem;
+}
+
+.sheet-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--firebrick);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheet-close-btn:active {
+  background: var(--firebrick-light);
+  transform: scale(0.9);
+}
+
 .sheet-handle {
   width: 36px;
   height: 4px;
@@ -340,6 +368,24 @@ html, body {
   height: 1px;
   background: var(--border);
   flex-shrink: 0;
+}
+
+/* Sheet helpers */
+.sheet-text {
+  font-size: 0.93rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.sheet-text strong {
+  color: var(--black);
+  font-weight: 600;
+}
+
+.sheet-buy-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 /* User info */

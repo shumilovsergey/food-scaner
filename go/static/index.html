@@ -18,7 +18,7 @@
     </div>
   </div>
 
-  <!-- Pending screen -->
+  <!-- Pending screen (kept for edge cases) -->
   <div id="pending-screen" class="screen hidden">
     <div class="center-card">
       <div class="pending-icon">⏳</div>
@@ -72,6 +72,12 @@
     <!-- User info sheet -->
     <div id="user-sheet" class="result-sheet hidden">
       <div class="sheet-handle"></div>
+      <button id="close-user-btn" class="sheet-close-btn" title="Закрыть">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round">
+          <line x1="1" y1="1" x2="13" y2="13"/>
+          <line x1="13" y1="1" x2="1" y2="13"/>
+        </svg>
+      </button>
       <div class="food-name">Мой профиль</div>
       <div class="user-info">
         <div class="user-info-row">
@@ -83,20 +89,39 @@
           <span id="user-sheet-id" class="user-info-value mono"></span>
         </div>
         <div class="user-info-row">
+          <span class="user-info-label">Статус</span>
+          <span id="user-sheet-status" class="user-info-value"></span>
+        </div>
+        <div class="user-info-row">
           <span class="user-info-label">Сканов сегодня</span>
           <span id="user-sheet-used" class="user-info-value"></span>
         </div>
-        <div class="user-info-row">
-          <span class="user-info-label">Осталось сегодня</span>
-          <span id="user-sheet-left" class="user-info-value"></span>
-        </div>
-        <div class="user-info-row">
-          <span class="user-info-label">Дневной лимит</span>
-          <span id="user-sheet-limit" class="user-info-value"></span>
-        </div>
       </div>
-      <button id="close-user-btn" class="btn-secondary">Закрыть</button>
-      <button id="logout-btn" class="btn-secondary" style="color: var(--firebrick); border-color: var(--firebrick)">Выйти</button>
+      <div id="user-sheet-buy" class="sheet-buy-block">
+        <button id="user-buy-scans-btn" class="btn-primary">Купить 10 сканов</button>
+        <button id="user-buy-pro-btn" class="btn-secondary">Оформить PRO на месяц</button>
+      </div>
+      <div class="sheet-footer">
+        <button id="logout-btn" class="btn-secondary" style="color: var(--firebrick); border-color: var(--firebrick)">Выйти</button>
+      </div>
+    </div>
+
+    <!-- Welcome sheet (shown once to new free users) -->
+    <div id="welcome-sheet" class="result-sheet hidden">
+      <div class="sheet-handle"></div>
+      <div class="food-name">Добро пожаловать!</div>
+      <p class="sheet-text">У вас есть <strong>3 бесплатных скана</strong>. Наведите камеру на еду и нажмите большую кнопку — мы посчитаем калории и КБЖУ.</p>
+      <button id="close-welcome-btn" class="btn-primary">Начать</button>
+    </div>
+
+    <!-- No-scans sheet -->
+    <div id="no-scans-sheet" class="result-sheet hidden">
+      <div class="sheet-handle"></div>
+      <div class="food-name">Сканы закончились</div>
+      <p class="sheet-text">Ваши бесплатные сканы исчерпаны. Купите пакет сканов или оформите PRO-подписку.</p>
+      <button id="buy-scans-btn" class="btn-primary">Купить 10 сканов</button>
+      <button id="buy-pro-btn" class="btn-secondary">Оформить PRO на месяц</button>
+      <button id="close-no-scans-btn" class="btn-secondary">Закрыть</button>
     </div>
 
     <!-- Result sheet -->
