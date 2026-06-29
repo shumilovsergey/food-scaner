@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="food-scaner" />
+  <meta name="theme-color" content="#15110E" />
+  <title>food-scaner</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="food-scaner" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+{{if .Error}}
+<div class="error-banner">{{.Error}}</div>
+{{end}}
+
+{{if .User}}
+{{$name := .User.Name}}{{if not $name}}{{$name = .User.AuthID}}{{end}}
+<main class="screen">
+  <header class="header">
+    <nav class="nav-tabs" id="navTabs">
+      <button class="tab active" data-tab="scaner">Scaner</button>
+      <button class="tab" data-tab="credits">Credits</button>
+    </nav>
+
+    <div class="profile-area">
+      <button class="profile-btn" id="profileBtn" data-name="{{$name}}" aria-label="Account menu">
+        <span class="profile-initial">?</span>
+      </button>
+      <div class="profile-popover" id="profilePopover">
+        <div class="pi-info">
+          <span class="pi-label">{{.User.Method}}</span>
+          <span class="pi-name">{{$name}}</span>
+          {{if .User.Name}}<span class="pi-sub">{{.User.AuthID}}</span>{{end}}
+        </div>
+        <div class="pi-list">
+          <a class="pi-action" href="/apps">apps</a>
+          <a class="pi-action" href="https://github.com/shumilovsergey/auth-center/blob/main/README.md" target="_blank" rel="noopener">readme</a>
+          <a class="pi-action pi-logout" href="/logout">log out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== SCANER panel ===== -->
+  <div id="panel-scaner" class="panel">
+    <!-- today's donut: total calories in the centre, protein as the accent arc -->
+    <section class="card donut" id="donut-card">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 120 120">
+          <circle class="track" cx="60" cy="60" r="52" stroke-width="13"/>
+          <circle class="track" cx="60" cy="60" r="39" stroke-width="9"/>
+          <circle class="arc cal"  id="d-cal-arc"  cx="60" cy="60" r="52" stroke-width="13" stroke-dasharray="0 999"/>
+          <circle class="arc prot" id="d-prot-arc" cx="60" cy="60" r="39" stroke-width="9"  stroke-dasharray="0 999"/>
+        </svg>
+        <div class="ring-center">
+          <span class="val" id="d-kcal">0</span>
+          <span class="unit">kcal today</span>
+          <span class="prot-val"><b id="d-prot">0</b> g protein</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- input section: how a meal gets added -->
+    <section class="sources" id="sources">
+      <button class="source primary" data-src="manual" aria-label="Add manually">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        <span class="lbl">Manual</span>
+      </button>
+      <button class="source" data-src="photo" aria-label="AI photo">
+        <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L19 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span class="lbl">AI photo</span>
+      </button>
+      <button class="source" data-src="text" aria-label="AI text">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/><path d="M8 9h9"/><path d="M8 13h6"/></svg>
+        <span class="lbl">AI text</span>
+      </button>
+      <button class="source" data-src="favorite" aria-label="Favorites">
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.8 6.2 21.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
+        <span class="lbl">Favorite</span>
+      </button>
+    </section>
+
+    <!-- today's meals; revealed on scroll -->
+    <section class="card history" id="history">
+      <div class="table-head"><span>Today's meals</span><span>kcal</span></div>
+      <div id="history-rows"></div>
+    </section>
+
+    <p class="hint">Scroll for today's meals · tap a meal to edit</p>
+  </div><!-- /panel-scaner -->
+
+  <!-- ===== CREDITS panel (filled from /api/state) ===== -->
+  <div id="panel-credits" class="panel" hidden>
+    <section class="card info-list">
+      <div class="info-row"><span class="info-k">Имя</span><span class="info-v">{{$name}}</span></div>
+      <div class="info-row"><span class="info-k">Ваш ID</span><span class="info-v">{{.User.AuthID}}</span></div>
+      <div class="info-row"><span class="info-k">Статус</span><span class="info-v" id="c-status">—</span></div>
+      <div class="info-row"><span class="info-k">Сканов сегодня</span><span class="info-v" id="c-uses">0</span></div>
+    </section>
+  </div>
+</main>
+
+<!-- ===== reusable meal card popup (add / edit) ===== -->
+<div class="overlay" id="overlay">
+  <div class="sheet" role="dialog" aria-label="Meal">
+    <div class="sheet-bar">
+      <button class="icon-btn" id="meal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <button class="icon-btn fav" id="meal-fav" aria-label="Add to favorite">
+        <svg viewBox="0 0 24 24"><path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18.8 6.2 21.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
+      </button>
+    </div>
+
+    <input class="field-name" id="m-name" placeholder="Meal name" />
+    <div class="kcal-wrap">
+      <input id="m-kcal" type="number" inputmode="numeric" placeholder="0" />
+      <span class="unit">kcal</span>
+    </div>
+
+    <div class="sub-grid">
+      <div class="sub"><label>Grams</label><input id="m-grams" type="number" inputmode="numeric" placeholder="0" /></div>
+      <div class="sub"><label>Proteins</label><input id="m-prot" type="number" inputmode="decimal" placeholder="0" /></div>
+      <div class="sub"><label>Fats</label><input id="m-fat" type="number" inputmode="decimal" placeholder="0" /></div>
+      <div class="sub"><label>Carbs</label><input id="m-carb" type="number" inputmode="decimal" placeholder="0" /></div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="del-btn" id="meal-del" aria-label="Delete meal">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M10 4h4"/><path d="M6 7l1 13h10l1-13"/></svg>
+      </button>
+      <button class="save-btn" id="meal-save" aria-label="Save">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AI text popup (describe a meal) ===== -->
+<div class="overlay" id="overlay-text">
+  <div class="sheet" role="dialog" aria-label="Describe meal">
+    <div class="sheet-bar">
+      <button class="icon-btn" data-close="overlay-text" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <textarea class="field-desc" id="text-desc" placeholder="Describe your meal…  e.g. «тарелка овсянки с бананом и мёдом»"></textarea>
+    <button class="save-btn" id="text-send" aria-label="Send">
+      <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ===== AI photo popup (camera mode) ===== -->
+<div class="overlay" id="overlay-photo">
+  <div class="sheet" role="dialog" aria-label="Photo meal">
+    <div class="sheet-bar">
+      <button class="icon-btn" data-close="overlay-photo" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="viewfinder" id="viewfinder">
+      <video id="cam" playsinline muted></video>
+      <div class="vf-fallback">
+        <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L19 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span>Point camera at your meal</span>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <!-- gallery: pick an existing photo (same outlined-square shape as delete, neutral) -->
+      <label class="del-btn gallery" aria-label="Add from gallery">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <input type="file" id="photo-file" accept="image/*" hidden />
+      </label>
+      <button class="save-btn" id="photo-take" aria-label="Take photo">
+        <svg viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L19 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== favorites picker popup ===== -->
+<div class="overlay" id="overlay-fav">
+  <div class="sheet" role="dialog" aria-label="Favorites">
+    <div class="sheet-bar">
+      <button class="icon-btn" data-close-fav aria-label="Close">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <span class="sheet-title">Favorites</span>
+      <span style="width:42px"></span>
+    </div>
+    <div class="fav-table">
+      <div class="fav-head"><span>Meal</span><span>Grams</span><span>Kcal</span></div>
+      <div class="fav-rows" id="fav-rows"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="del-btn" id="fav-del" aria-label="Delete favorite">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M10 4h4"/><path d="M6 7l1 13h10l1-13"/></svg>
+      </button>
+      <button class="save-btn" id="fav-accept" aria-label="Add selected">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{{else}}
+
+<div class="login-screen">
+  <div class="login-card-wrap">
+    <div class="login-card">
+      <div class="login-logo">food-scaner</div>
+      <a class="login-domain" href="https://sh-development.ru" target="_blank" rel="noopener">sh-development.ru</a>
+      <a class="login-btn" href="/login">войти</a>
+    </div>
+  </div>
+  <div class="app-about">
+    <p>Считает калории и БЖУ по фото или описанию еды. Веди дневник за сегодня — донат, история приёмов и избранное. Вход через Telegram, Solana или Google без паролей.</p>
+  </div>
+</div>
+
+{{end}}
+
+<script src="/script.js"></script>
+</body>
+</html>

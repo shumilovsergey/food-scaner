@@ -7,3 +7,8 @@ go/tmp/
 .DS_Store
 .claude/ 
 
+*.env
+build/.env
+skeleton
+old-version
+tools
